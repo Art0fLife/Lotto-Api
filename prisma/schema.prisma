@@ -1,0 +1,132 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id            Int       @id @default(autoincrement())
+  name          String    @db.VarChar(255)
+  email         String    @unique @db.VarChar(255)
+  password      String    @db.VarChar(255)
+  verifyToken   String?   @map("verifyToken") @db.VarChar(255)
+  roleId        Int       @default(0) @map("role_id") @db.SmallInt
+  status        Int       @default(0) @db.SmallInt
+  rememberToken String?   @map("remember_token") @db.VarChar(100)
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime? @map("updated_at") @db.Timestamp(6)
+  deletedAt     DateTime? @default(dbgenerated("NULL")) @map("deleted_at") @db.Timestamp(6)
+
+  @@map("admins")
+}
+
+model AdminSession {
+  id               String    @id @default(cuid()) @db.VarChar(191)
+  adminId          Int       @map("admin_id")
+  deviceId         String    @map("device_id") @db.VarChar(191)
+  refreshTokenHash String?   @map("refresh_token_hash") @db.VarChar(255)
+  sessionExpiresAt DateTime  @map("session_expires_at") @db.Timestamptz(6)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([adminId], map: "admin_sessions_admin_id_idx")
+  @@index([adminId, deviceId, revokedAt], map: "admin_sessions_admin_id_device_id_revoked_at_idx")
+  @@map("admin_sessions")
+}
+
+model Role {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime? @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(6)
+
+  @@map("roles")
+}
+
+model LottoCategory {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  payRate   Int       @default(0) @map("pay_rate") @db.SmallInt
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamp(6)
+  deletedAt DateTime? @default(dbgenerated("NULL")) @map("deleted_at") @db.Timestamp(6)
+
+  @@map("lotto_categories")
+}
+
+model LottoTicket {
+  id        Int       @id @default(autoincrement())
+  title     String    @db.VarChar(255)
+  status    Int       @default(0) @db.SmallInt
+  startDate DateTime? @map("start_date") @db.Timestamp(6)
+  endDate   DateTime? @map("end_date") @db.Timestamp(6)
+  rewardNumber String? @map("reward_number") @db.VarChar(255)
+  rewardNumberBottom String? @map("reward_number_bottom") @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamp(6)
+  deletedAt DateTime? @default(dbgenerated("NULL")) @map("deleted_at") @db.Timestamp(6)
+
+  @@map("lotto_tickets")
+}
+
+
+model Bill {
+  id          Int       @id @default(autoincrement())
+  adminId     Int       @map("admin_id")
+  ticketId    Int       @map("ticket_id")
+  totalAmount Decimal   @map("total_amount") @db.Decimal(12, 2)
+  totalWinner Decimal   @map("total_winner") @db.Decimal(12, 2)
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("bills")
+}
+
+model Bet {
+  id              BigInt    @id @default(autoincrement()) @db.BigInt
+  billId          BigInt    @map("bill_id") @db.BigInt
+  adminId         Int       @map("admin_id") @db.SmallInt
+  rowNumber       Int       @map("row_number")
+  lottoCategoryId Int       @map("lotto_category_id")
+  code            String    @db.VarChar(3)
+  amount          Decimal   @db.Decimal(12, 2)
+  isLimitNumber   Int       @default(0) @map("is_limit_number")
+  winnerAmount    Decimal   @default(0) @db.Decimal(12, 2) @map("winner_amount")
+  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6)
+  @@map("bets")
+}
+
+model Log {
+  id              BigInt    @id @default(autoincrement()) @db.BigInt
+  billId          BigInt    @map("bill_id") @db.BigInt
+  adminId         Int       @map("admin_id") @db.SmallInt
+  rowNumber       Int       @map("row_number")
+  lottoCategoryId Int       @map("lotto_category_id")
+  code            String    @db.VarChar(3)
+  amount          Decimal   @db.Decimal(12, 2)
+  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6)
+  @@map("logs")
+}
+
+model LimitNumber {
+  id            Int         @id @default(autoincrement())
+  lottoTicketId Int         @map("lotto_ticket_id")
+  code          String      @db.VarChar(10)
+  createdAt     DateTime?   @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime?   @default(now()) @map("updated_at") @db.Timestamp(6)
+  deletedAt     DateTime?   @default(dbgenerated("NULL")) @map("deleted_at") @db.Timestamp(6)
+
+  @@map("limit_numbers")
+}
