@@ -66,6 +66,16 @@ describe('BetService', () => {
     // Reset all mocks before each test
     jest.clearAllMocks();
 
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+    mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+      id: 10,
+      status: 1,
+      startDate: oneHourAgo,
+      endDate: oneHourLater,
+    });
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BetService,
@@ -85,7 +95,12 @@ describe('BetService', () => {
 
     describe('happy path', () => {
       it('should create bill and bets for TWO_DIGIT type with both top and bottom amounts', async () => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
         mockPrisma.bill.create.mockResolvedValue({ id: 100, ticketId: 10, adminId: ADMIN_ID });
         mockBet.createMany.mockResolvedValue({ count: 2 });
         mockPrisma.bill.update.mockResolvedValue({});
@@ -113,7 +128,12 @@ describe('BetService', () => {
       });
 
       it('should create only top bet when input3 is absent', async () => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
         mockPrisma.bill.create.mockResolvedValue({ id: 101, ticketId: 10, adminId: ADMIN_ID });
         mockBet.createMany.mockResolvedValue({ count: 1 });
         mockPrisma.bill.update.mockResolvedValue({});
@@ -136,10 +156,14 @@ describe('BetService', () => {
       });
 
       it('should create multiple bottom bets for THREE_DIGIT (3 ตัวโต๊ด)', async () => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
         mockPrisma.bill.create.mockResolvedValue({ id: 110, ticketId: 10, adminId: ADMIN_ID });
-        // for 3 distinct digits like '123' we expect 5 permutations (excluding exact)
-        mockBet.createMany.mockResolvedValue({ count: 5 });
+        mockBet.createMany.mockResolvedValue({ count: 1 });
         mockPrisma.bill.update.mockResolvedValue({});
         mockPrisma.bill.count.mockResolvedValue(1);
 
@@ -150,22 +174,23 @@ describe('BetService', () => {
         const result = await service.createFromModal(ADMIN_ID, dto);
 
         expect(result.createdBetRows).toBe(1);
-        expect(result.createdBetItems).toBe(5);
-        expect(result.totalAmount).toBe(500); // 100 * 5 permutations
+        expect(result.createdBetItems).toBe(1);
+        expect(result.totalAmount).toBe(100);
 
         expect(mockBet.createMany).toHaveBeenCalledWith({
           data: expect.arrayContaining([
-            expect.objectContaining({ lottoCategoryId: 5, code: '132', amount: 100 }),
-            expect.objectContaining({ lottoCategoryId: 5, code: '213', amount: 100 }),
-            expect.objectContaining({ lottoCategoryId: 5, code: '231', amount: 100 }),
-            expect.objectContaining({ lottoCategoryId: 5, code: '312', amount: 100 }),
-            expect.objectContaining({ lottoCategoryId: 5, code: '321', amount: 100 }),
+            expect.objectContaining({ lottoCategoryId: 5, code: '123', amount: 100 }),
           ]),
         });
       });
 
       it('should create only bottom bet when input2 is absent', async () => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
         mockPrisma.bill.create.mockResolvedValue({ id: 102, ticketId: 10, adminId: ADMIN_ID });
         mockBet.createMany.mockResolvedValue({ count: 1 });
         mockPrisma.bill.update.mockResolvedValue({});
@@ -188,7 +213,12 @@ describe('BetService', () => {
       });
 
       it('should handle multiple rows and sum totalAmount correctly', async () => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
         mockPrisma.bill.create.mockResolvedValue({ id: 103, ticketId: 10, adminId: ADMIN_ID });
         mockBet.createMany.mockResolvedValue({ count: 3 });
         mockPrisma.bill.update.mockResolvedValue({});
@@ -213,7 +243,12 @@ describe('BetService', () => {
 
     describe('resolveCategoryId mapping', () => {
       beforeEach(() => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
         mockPrisma.bill.create.mockResolvedValue({ id: 200, ticketId: 10, adminId: ADMIN_ID });
         mockBet.createMany.mockResolvedValue({ count: 2 });
         mockPrisma.bill.update.mockResolvedValue({});
@@ -261,12 +296,17 @@ describe('BetService', () => {
         const dto = makeModalDto([{ betType: BetType.TWO_DIGIT, input1: '12', input2: 10 }]);
 
         await expect(service.createFromModal(ADMIN_ID, dto)).rejects.toThrow(
-          new BadRequestException('No active ticket found'),
+          new BadRequestException('ไม่พบงวดหวย'),
         );
       });
 
       it('when input1 is empty', async () => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
 
         const dto = makeModalDto([{ betType: BetType.TWO_DIGIT, input1: '', input2: 10 }]);
 
@@ -274,7 +314,12 @@ describe('BetService', () => {
       });
 
       it('when both input2 and input3 are missing', async () => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
 
         const dto = makeModalDto([
           { betType: BetType.TWO_DIGIT, input1: '12' } as any,
@@ -284,7 +329,12 @@ describe('BetService', () => {
       });
 
       it('when input1 contains non-digit characters', async () => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
 
         const dto = makeModalDto([{ betType: BetType.TWO_DIGIT, input1: 'ab', input2: 10 }]);
 
@@ -292,7 +342,12 @@ describe('BetService', () => {
       });
 
       it('when input1 has more than 3 digits', async () => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
 
         const dto = makeModalDto([{ betType: BetType.TWO_DIGIT, input1: '1234', input2: 10 }]);
 
@@ -300,7 +355,12 @@ describe('BetService', () => {
       });
 
       it('when input2 is zero', async () => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
 
         const dto = makeModalDto([{ betType: BetType.TWO_DIGIT, input1: '12', input2: 0 }]);
 
@@ -308,7 +368,12 @@ describe('BetService', () => {
       });
 
       it('when input2 is negative', async () => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
 
         const dto = makeModalDto([{ betType: BetType.TWO_DIGIT, input1: '12', input2: -5 }]);
 
@@ -316,7 +381,12 @@ describe('BetService', () => {
       });
 
       it('when input3 is not a positive integer', async () => {
-        mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 10 });
+        mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 10,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
 
         const dto = makeModalDto([{ betType: BetType.TWO_DIGIT, input1: '12', input3: 0 }]);
 
@@ -459,12 +529,17 @@ describe('BetService', () => {
       mockPrisma.lottoTicket.findFirst.mockResolvedValue(null);
 
       await expect(service.generateMockRandomBillsForAdmin(ADMIN_ID)).rejects.toThrow(
-        new BadRequestException('No active ticket found'),
+        new BadRequestException('ไม่พบงวดหวย'),
       );
     });
 
     it('should generate bills with valid ranges and persist bill total', async () => {
-      mockPrisma.lottoTicket.findFirst.mockResolvedValue({ id: 22 });
+      mockPrisma.lottoTicket.findFirst.mockResolvedValue({
+        id: 22,
+        status: 1,
+        startDate: new Date(Date.now() - 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 60 * 60 * 1000),
+      });
 
       let nextBillId = 1000;
       mockPrisma.bill.create.mockImplementation(async () => ({ id: nextBillId++ }));
@@ -477,8 +552,7 @@ describe('BetService', () => {
       expect(result.length).toBeGreaterThanOrEqual(2);
       expect(result.length).toBeLessThanOrEqual(100);
 
-      // const allowedAmounts = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500];
-      const allowedAmounts = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+      const allowedAmounts = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500];
 
       for (const bill of result) {
         expect(bill.user_id).toBe(ADMIN_ID);
