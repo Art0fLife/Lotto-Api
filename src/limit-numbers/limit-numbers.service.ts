@@ -131,4 +131,55 @@ export class LimitNumbersService {
 
     return limitCodes;
   }
+
+  async checkIsLimitNumber(input: string, blockedList: string[], lottoCategoryId: number): Promise<boolean> {
+    const inputLength = input.length;
+
+    if (inputLength === 1) {
+      // หาเลขอั้น 1 หลักเท่านั้น
+      const singleBlocked = blockedList.filter((b) => b.length === 1);
+      return singleBlocked.includes(input);
+    }
+
+    if (inputLength === 2) {
+      // หาเลขอั้น 2 หลักเท่านั้น
+      const doubleBlocked = blockedList.filter((b) => b.length === 2);
+      return doubleBlocked.includes(input);
+    }
+
+    if (inputLength === 3) {
+
+      const doubleBlocked = blockedList.filter((b) => b.length === 2);
+
+      // 3 ตัวโต๊ด: เช็คทุก permutation ของ input กับ blockedList 2 หลัก
+      if (lottoCategoryId === 5) {
+        // สลับ ตัวเลข 3 ตัวโดยที่ต้องไม่ซ้ำกันเพื่อเช็คกับเลขอั้น 2 ตัว
+        const permutations = new Set<string>();
+        for (let i = 0; i < inputLength; i++) {
+          for (let j = 0; j < inputLength; j++) {
+            if (j === i) continue;
+            for (let k = 0; k < inputLength; k++) {
+              if (k === i || k === j) continue;
+              permutations.add(input[i] + input[j] + input[k]);
+            }
+          }
+        }
+
+        for (const perm of permutations) {
+          const lastTwo = perm.slice(-2);
+          if (doubleBlocked.includes(lastTwo)) {
+            return true;
+          }
+        }
+
+        return false;
+      }
+       
+      // 3 ตัวตรง/โต้ด: เช็ค 2 ตัวสุดท้าย
+      const lastTwo = input.slice(-2);
+      return doubleBlocked.includes(lastTwo);
+    }
+
+    return false;
+  }
 }

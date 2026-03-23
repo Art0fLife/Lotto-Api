@@ -131,16 +131,16 @@ export class LottoService {
             // Get expanded limit codes for this ticket (all contiguous substrings)
             const limitCodes = await this.limitNumbersService.getLimitCodesForTicket(id);
 
-            // console.log('limitCodes', Array.from(limitCodes));
+            console.log('limitCodes', Array.from(limitCodes));
 
             // Rules: [categoryId, matchCodes, payRate]
             const rules = [
-              { categoryId: 1, matchCodes: [flist[1]], rate: 70 },
-              { categoryId: 2, matchCodes: [flist[2]], rate: 70 },
-              { categoryId: 3, matchCodes: [flist[3]], rate: 400 },
-              { categoryId: 5, matchCodes: flist[5], rate: 80 },
-              { categoryId: 6, matchCodes: flist[6], rate: 3 },
-              { categoryId: 7, matchCodes: flist[7], rate: 2 }, 
+              { categoryId: 1, matchCodes: [flist[1]], rate: 70, rateLimit: 50 },
+              { categoryId: 2, matchCodes: [flist[2]], rate: 70, rateLimit: 50 },
+              { categoryId: 3, matchCodes: [flist[3]], rate: 400, rateLimit: 200 },
+              { categoryId: 5, matchCodes: flist[5], rate: 80, rateLimit: 50 },
+              { categoryId: 6, matchCodes: flist[6], rate: 3, rateLimit: 1.5 },
+              { categoryId: 7, matchCodes: flist[7], rate: 2, rateLimit: 1 }, 
             ];
 
             for (const rule of rules) {
@@ -154,14 +154,18 @@ export class LottoService {
                 select: { id: true, amount: true, code: true },
               });
 
+              // console.log(winningBets);
+
+              // return false;
+
               await Promise.all(
                 winningBets.map(bet => {
-                  const isLimit = limitCodes.has(bet.code);
-                  const baseAmount = Number(bet.amount) * rule.rate;
+                  const isLimit = this.limitNumbersService.checkIsLimitNumber(bet.code, Array.from(limitCodes), rule.categoryId);
+                  const baseAmount = Number(bet.amount) * (isLimit ? rule.rateLimit : rule.rate);
                   return this.prisma.bet.update({
                     where: { id: bet.id },
                     data: {
-                      winnerAmount: isLimit ? baseAmount / 2 : baseAmount,
+                      winnerAmount: baseAmount,
                       isLimitNumber: isLimit ? 1 : 0,
                     },
                   });
