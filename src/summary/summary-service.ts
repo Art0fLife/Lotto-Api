@@ -9,7 +9,11 @@ export class SummaryService {
 
   async getBillsSummarySuperAdmin(adminId?: number, roleId?: number, ticketId?: number, topN = 10, overBet = 500) {
     const billWhere: any = { deletedAt: null };
-    const limitNumbers = ticketId !== undefined ? await this.limitNumbersService.getLimitCodesForTicket(ticketId) : null;
+    const rawLimitCodesByTicket = new Map<number, string[]>();
+
+    if (ticketId !== undefined) {
+      rawLimitCodesByTicket.set(ticketId, await this.limitNumbersService.getRawLimitCodesForTicket(ticketId));
+    }
 
     if (roleId !== undefined && roleId !== 1) {
       billWhere.adminId = adminId;
@@ -131,6 +135,16 @@ export class SummaryService {
       const ticketSummary = summaryByTicket.get(row.ticketId);
       if (!ticketSummary) continue;
 
+      let blockedList = rawLimitCodesByTicket.get(row.ticketId);
+      if (!blockedList) {
+        blockedList = await this.limitNumbersService.getRawLimitCodesForTicket(row.ticketId);
+        rawLimitCodesByTicket.set(row.ticketId, blockedList);
+      }
+
+      const isLimit = blockedList.length > 0
+        ? await this.limitNumbersService.checkIsLimitNumber(row.code, blockedList, row.lottoCategoryId)
+        : false;
+
       let categorySummary = ticketSummary.lottoCategories.find((item) => item.lottoCategoryId === row.lottoCategoryId);
       if (!categorySummary) {
         categorySummary = {
@@ -144,7 +158,7 @@ export class SummaryService {
       categorySummary.codes.push({
         code: row.code,
         amount: Number(row.amount),
-        isLimit: limitNumbers ? limitNumbers.has(row.code) : false,
+        isLimit,
       });
     }
 

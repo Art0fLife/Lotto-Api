@@ -132,6 +132,21 @@ export class LimitNumbersService {
     return limitCodes;
   }
 
+  async getRawLimitCodesForTicket(ticketId: number): Promise<string[]> {
+    const limitNumbers = await this.prisma.limitNumber.findMany({
+      where: { lottoTicketId: ticketId, deletedAt: null },
+      select: { code: true },
+    });
+
+    return Array.from(
+      new Set(
+        limitNumbers
+          .map((item) => String(item.code).trim())
+          .filter((code) => code !== ''),
+      ),
+    );
+  }
+
   async checkIsLimitNumber(input: string, blockedList: string[], lottoCategoryId: number): Promise<boolean> {
     const inputLength = input.length;
 
